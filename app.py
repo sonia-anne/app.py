@@ -2,109 +2,55 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
-st.set_page_config(page_title="NEUROGEN-X Interactive Dashboard", layout="wide")
+st.set_page_config(page_title="NEUROGEN-X | STEAM Breakdown", layout="wide")
 
-# Tabs
-st.title("🧠 NEUROGEN-X Interactive Dashboard")
-tab1, tab2 = st.tabs(["Efficacy & Cost Analysis", "STEAM Contribution Analysis"])
+st.title("📊 NEUROGEN-X | STEAM Contribution Dashboard")
 
-# --------------------- TAB 1 ---------------------
-with tab1:
-    st.header("🔬 Efficacy and Cost Comparison")
-    
-    # Sidebar controls
-    st.sidebar.header("Adjust Treatment Simulation")
-    dose = st.sidebar.slider("Nanorobot Dose (millions)", 10, 300, 100)
-    ai_level = st.sidebar.selectbox("AI Optimization Level", ["Low", "Medium", "High"])
-    neuroregen = st.sidebar.checkbox("Activate Neuron Regeneration Module", True)
+st.markdown("""
+Explore how each STEAM field drives the innovation behind NEUROGEN-X. Adjust project complexity in real time and see how contributions shift.
+""")
 
-    # Dynamic efficacy for NEUROGEN-X
-    efficacy_base = 60 + dose / 4
-    if ai_level == "Medium": efficacy_base += 10
-    elif ai_level == "High": efficacy_base += 20
-    if neuroregen: efficacy_base += 5
-    efficacy_neurogenx = min(efficacy_base, 100)
+# Interactive sliders for project demands
+st.sidebar.header("🎛️ Adjust Technical Complexity")
+bio = st.sidebar.slider("🧬 Biology Complexity (Protein Folding, Prion Targeting)", 1, 10, 9)
+ai = st.sidebar.slider("🤖 AI Modeling Complexity (Real-Time Regulation)", 1, 10, 8)
+eng = st.sidebar.slider("🔧 Nanotech Engineering (Fabrication, Delivery)", 1, 10, 8)
+art = st.sidebar.slider("🎨 Visualization & UX Design", 1, 10, 5)
+math = st.sidebar.slider("📐 Simulation & Predictive Modeling", 1, 10, 5)
 
-    # Comparative treatment data
-    treatments = {
-        "Quinacrine": {"efficacy": 0, "cost": 500},
-        "Gold Nanoparticles (MIT, 2024)": {"efficacy": 48, "cost": 35000},
-        "ASO Therapy (NIH, 2023)": {"efficacy": 70, "cost": 300000},
-        "NEUROGEN-X": {"efficacy": efficacy_neurogenx, "cost": 8000}
-    }
+# Data
+total = bio + ai + eng + art + math
+steam_data = {
+    "STEAM Area": ["Science (Biology)", "Technology (AI)", "Engineering (Nanotech)", "Art (3D Design)", "Math (Simulation)"],
+    "Complexity Weight": [bio, ai, eng, art, math],
+    "% Contribution": [round(v / total * 100, 1) for v in [bio, ai, eng, art, math]]
+}
+df = pd.DataFrame(steam_data)
 
-    df = pd.DataFrame(treatments).T.reset_index().rename(columns={"index": "Treatment"})
+# Table Display
+st.subheader("📋 Contribution Table")
+st.dataframe(df, use_container_width=True, height=300)
 
-    # Plot efficacy
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Efficacy (%)")
-        fig1, ax1 = plt.subplots()
-        colors = ["crimson" if t != "NEUROGEN-X" else "mediumseagreen" for t in df["Treatment"]]
-        ax1.barh(df["Treatment"], df["efficacy"], color=colors)
-        ax1.set_xlim(0, 100)
-        st.pyplot(fig1)
+# Heatmap
+st.subheader("🌡️ Visual Heatmap of Contribution")
+fig, ax = plt.subplots(figsize=(10, 1.2))
+sns.heatmap([df["% Contribution"]], annot=True, fmt=".1f", cmap="YlGnBu", cbar=False,
+            xticklabels=df["STEAM Area"], yticklabels=False, ax=ax)
+plt.xticks(rotation=15)
+plt.tight_layout()
+st.pyplot(fig)
 
-    # Plot costs
-    with col2:
-        st.subheader("Cost per Patient (USD) - Log Scale")
-        fig2, ax2 = plt.subplots()
-        ax2.barh(df["Treatment"], df["cost"], color=colors)
-        ax2.set_xscale("log")
-        st.pyplot(fig2)
+# Pie chart
+st.subheader("📈 Proportional Pie Chart")
+fig2, ax2 = plt.subplots()
+ax2.pie(df["% Contribution"], labels=df["STEAM Area"], autopct="%1.1f%%", startangle=90, colors=sns.color_palette("pastel"))
+ax2.axis("equal")
+st.pyplot(fig2)
 
-    # Scientific summary
-    st.markdown("""
-    ### 🧪 Scientific Summary
-    - CRISPR-Cas13d enzymatic system achieves >94% simulated efficacy.
-    - AI real-time regulation prevents neuron apoptosis.
-    - Regeneration module restores synaptic networks via BDNF and NGF.
-    - Self-destructing nanorobots eliminate accumulation and toxicity.
-    - Total projected cost per patient: $8,000 (vs. gene therapy: $1.2M).
-    """)
+# Highlight box
+max_area = df.loc[df["% Contribution"].idxmax(), "STEAM Area"]
+max_value = df["% Contribution"].max()
 
-# --------------------- TAB 2 ---------------------
-with tab2:
-    st.header("🎓 STEAM Contribution Breakdown")
-
-    # Input sliders
-    bio = st.slider("Biological Complexity", 1, 10, 8)
-    ai = st.slider("AI Modeling Demand", 1, 10, 7)
-    eng = st.slider("Nanotech Engineering Difficulty", 1, 10, 7)
-    art = st.slider("Visualization Needs", 1, 10, 4)
-    math = st.slider("Mathematical Modeling Complexity", 1, 10, 4)
-
-    total = bio + ai + eng + art + math
-    perc = {
-        "Science (Biology)": (bio / total) * 100,
-        "Technology (AI)": (ai / total) * 100,
-        "Engineering (Nanotech)": (eng / total) * 100,
-        "Art (3D Visualization)": (art / total) * 100,
-        "Mathematics (Simulation)": (math / total) * 100
-    }
-
-    # Plot bubble chart
-    fig3, ax3 = plt.subplots(figsize=(10, 6))
-    sizes = [v * 10 for v in perc.values()]
-    colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854']
-    ax3.scatter(perc.keys(), perc.values(), s=sizes, c=colors, alpha=0.6)
-
-    for i, (k, v) in enumerate(perc.items()):
-        ax3.annotate(f"{v:.1f}%", (list(perc.keys())[i], v + 1), ha='center', fontsize=10)
-
-    ax3.set_ylim(0, 40)
-    ax3.set_ylabel("Contribution (%)")
-    ax3.set_title("NEUROGEN-X - STEAM Field Contribution Based on Project Demands")
-    ax3.grid(True)
-    st.pyplot(fig3)
-
-    # Rationale
-    st.markdown("""
-    ### 🔍 Justification Based on Technical Demands
-    - **Biology** is key due to the complexity of prions and regenerative neurobiology.
-    - **AI** ensures precision degradation and avoids off-target damage.
-    - **Engineering** is required for creating functional, biocompatible nanodevices.
-    - **Art** enhances communication and model interaction in research and evaluation.
-    - **Mathematics** supports all dynamic modeling, simulations, and dose-response optimization.
-    """)
+st.success(f"🔍 The most critical field right now is: **{max_area}** contributing **{max_value}%** to NEUROGEN-X.")
